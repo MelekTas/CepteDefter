@@ -2,7 +2,9 @@ import SwiftUI
 
 struct AddExpenseView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var dataManager: DataManager
 
+    @State private var type: TransactionType = .gider // Gelir / Gider seçimi
     @State private var amountText: String = ""
     @State private var category: ExpenseCategory = .mutfak
     @State private var date: Date = .now
@@ -11,14 +13,16 @@ struct AddExpenseView: View {
     @State private var frequency: RecurrenceFrequency = .monthly
     @State private var showDatePicker = false
 
-    var onSave: (Transaction) -> Void = { _ in }
-
     var body: some View {
         ScrollView {
-            VStack(spacing: 28) {
+            VStack(spacing: 24) {
+                // MARK: Gelir / Gider Seçici
+                typeSegmentedControl
+                    .padding(.top, 12)
+
                 amountField
 
-                sectionLabel("KATEGORİ")
+                sectionLabel(type == .gider ? "KATEGORİ" : "GELİR KATEGORİSİ")
                 categoryChips
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -28,7 +32,7 @@ struct AddExpenseView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     sectionLabel("AÇIKLAMA")
-                    TextField("Ör. Migros market alışverişi", text: $note)
+                    TextField(type == .gider ? "Ör. Migros market alışverişi" : "Ör. Maaş / Freelance ödemesi", text: $note)
                         .font(Theme.body(14))
                         .padding(.bottom, 10)
                         .overlay(alignment: .bottom) {
@@ -43,7 +47,6 @@ struct AddExpenseView: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, 12)
             .padding(.bottom, 100)
         }
         .background(Theme.paper.ignoresSafeArea())
@@ -53,7 +56,7 @@ struct AddExpenseView: View {
                 .padding(.vertical, 12)
                 .background(.ultraThinMaterial)
         }
-        .navigationTitle("Yeni Harcama")
+        .navigationTitle(type == .gider ? "Yeni Gider Ekles" : "Yeni Gelir Ekle")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -62,6 +65,15 @@ struct AddExpenseView: View {
                 }
             }
         }
+    }
+
+    private var typeSegmentedControl: some View {
+        Picker("İşlem Türü", selection: $type.animation()) {
+            ForEach(TransactionType.allCases, id: \.self) { t in
+                Text(t.rawValue).tag(t)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var amountField: some View {
@@ -74,13 +86,13 @@ struct AddExpenseView: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize()
             }
-            .foregroundStyle(Theme.ink)
-            Text("tutarı girin")
+            .foregroundStyle(type == .gider ? Theme.ink : Theme.sage)
+            Text(type == .gider ? "gider tutarını girin" : "gelir tutarını girin")
                 .font(Theme.body(12))
                 .foregroundStyle(Theme.slate)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 24)
+        .padding(.top, 12)
     }
 
     private func sectionLabel(_ text: String) -> some View {
@@ -93,10 +105,10 @@ struct AddExpenseView: View {
 
     private var categoryChips: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 10)], spacing: 10) {
-            ForEach(ExpenseCategory.allCases) { cat in
+            ForEach(ExpenseCategory.allCases, id: \.self) { cat in
                 let isSelected = category == cat
                 Button(action: { category = cat }) {
-                    Text("\(cat.emoji) \(cat.rawValue)")
+                    Text(cat.rawValue)
                         .font(Theme.body(13, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                         .padding(.horizontal, 16)
@@ -139,10 +151,10 @@ struct AddExpenseView: View {
     private var recurringToggle: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Yinelenen Harcama")
+                Text("Yinelenen İşlem")
                     .font(Theme.body(14, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("Abonelik / fatura gibi düzenli ödemeler")
+                Text("Abonelik, maaş veya düzenli ödemeler")
                     .font(Theme.body(11.5))
                     .foregroundStyle(Theme.slate)
             }
@@ -155,7 +167,7 @@ struct AddExpenseView: View {
 
     private var frequencyPicker: some View {
         Picker("Sıklık", selection: $frequency) {
-            ForEach(RecurrenceFrequency.allCases) { freq in
+            ForEach(RecurrenceFrequency.allCases, id: \.self) { freq in
                 Text(freq.rawValue).tag(freq)
             }
         }
@@ -177,20 +189,26 @@ struct AddExpenseView: View {
 
     private func save() {
         guard let amount = Double(amountText.replacingOccurrences(of: ",", with: ".")) else { return }
+
         let transaction = Transaction(
             amount: amount,
             category: category,
-            type: .gider,
+            type: type, // Seçilen Gelir veya Gider türü aktarılıyor
             date: date,
             note: note,
             isRecurring: isRecurring,
             frequency: isRecurring ? frequency : nil
         )
-        onSave(transaction)
+
+        dataManager.addTransaction(transaction)
         dismiss()
     }
 }
 
 #Preview {
-    NavigationStack { AddExpenseView() }
+    NavigationStack {
+        AddExpenseView()
+            .environmentObject(DataManager())
+    }
 }
+

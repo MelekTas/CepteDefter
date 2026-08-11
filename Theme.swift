@@ -12,9 +12,8 @@ enum Theme {
     static let slate     = Color(hex: "8A9199")
     static let hairline  = Color(hex: "DAD3C3")
 
-    // MARK: Fonts
     static func display(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
-        .custom("Fraunces-SemiBold", size: size).weight(weight)
+        .custom("Fraunces-SemiBold", size: size) // .weight(...) kısmını kaldırdık
     }
     static func mono(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight, design: .monospaced)

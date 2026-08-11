@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct AuthView: View {
     enum Mode { case signIn, signUp }
@@ -148,9 +149,21 @@ struct AuthView: View {
     private func handleAuth() {
         errorMessage = nil
         isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            isLoading = false
-            onAuthenticated()
+        
+        if mode == .signIn {
+            Auth.auth().signIn(withEmail: email, password: password) { result, error in
+                isLoading = false
+                if let error = error {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        } else {
+            Auth.auth().createUser(withEmail: email, password: password) { result, error in
+                isLoading = false
+                if let error = error {
+                    errorMessage = error.localizedDescription
+                }
+            }
         }
     }
 }

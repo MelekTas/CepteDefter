@@ -1,4 +1,3 @@
-
 import Foundation
 
 enum ExpenseCategory: String, CaseIterable, Identifiable, Codable {
@@ -11,14 +10,14 @@ enum ExpenseCategory: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
-    var emoji: String {
+    var iconName: String {
         switch self {
-        case .mutfak: return "🍲"
-        case .egitim: return "📚"
-        case .eglence: return "🎬"
-        case .fatura: return "🧾"
-        case .ulasim: return "🚌"
-        case .diger: return "⋯"
+        case .mutfak: return "cart.fill"
+        case .egitim: return "book.fill"
+        case .eglence: return "popcorn.fill"
+        case .fatura: return "doc.text.fill"
+        case .ulasim: return "bus.fill"
+        case .diger: return "ellipsis.circle.fill"
         }
     }
 }
@@ -74,20 +73,28 @@ struct TransactionFilter {
     var searchText: String = ""
 }
 
-extension Transaction {
-    static let sample: [Transaction] = [
-        Transaction(amount: 930, category: .mutfak, type: .gider, date: .now, note: "Migros market alışverişi"),
-        Transaction(amount: 400, category: .egitim, type: .gider, date: .now, note: "Online kurs"),
-        Transaction(amount: 528, category: .eglence, type: .gider, date: .now, note: "Sinema + akşam yemeği"),
-        Transaction(amount: 840, category: .fatura, type: .gider, date: .now, note: "Elektrik faturası", isRecurring: true, frequency: .monthly)
-    ]
+struct SharedMarketList: Identifiable, Codable {
+    var id: String = UUID().uuidString
+    var senderId: String
+    var receiverId: String
+    var imageURL: String?
+    var note: String
+    var category: ExpenseCategory = .mutfak
+    var isCompleted: Bool = false
+    var spentAmount: Double?
+    var createdAt: Date = Date()
+}
+enum PairingRequestStatus: String, Codable {
+    case pending
+    case accepted
+    case rejected
 }
 
-extension CategoryBudget {
-    static let sample: [CategoryBudget] = [
-        CategoryBudget(category: .mutfak, monthlyLimit: 1500, spent: 930),
-        CategoryBudget(category: .egitim, monthlyLimit: 1000, spent: 400),
-        CategoryBudget(category: .eglence, monthlyLimit: 600, spent: 528),
-        CategoryBudget(category: .fatura, monthlyLimit: 800, spent: 840)
-    ]
+struct PairingRequest: Identifiable, Codable {
+    var id: String = UUID().uuidString
+    var fromUserId: String
+    var fromUserCode: String
+    var toUserId: String
+    var status: PairingRequestStatus = .pending
+    var createdAt: Date = Date()
 }
